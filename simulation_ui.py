@@ -1,15 +1,10 @@
-import sys
-import time
 import math
-import threading
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLabel, QDial
+from PyQt5.QtWidgets import QWidget, QPushButton, QVBoxLayout, QLabel, QDial
 from PyQt5.QtGui import QPainter, QFont
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QSizePolicy
-from PyQt5.QtCore import QThread
-
-from fuzzy_logic_system import get_simulation
+from PyQt5.QtCore import pyqtSignal
 
 class SpeedDial(QDial):
     def __init__(self, parent=None):
@@ -29,14 +24,17 @@ class SpeedDial(QDial):
         self.setValue(speed)
         self.repaint()
 
-class CruiseControlUI(QWidget, defaultSpeed):
-    def __init__(self):
-        super().__init__()
-        self.defaultSpeed = self.defaultSpeed
-        self.currentSpeed = self.defaultSpeed
-        self.slopeValue = 0
-        self.initUI()
+class SimulationUI(QWidget):
+    set_slope_in_simulation = pyqtSignal(int)
 
+    def __init__(self, initialSpeed, initialSlope):
+        super().__init__()
+        self.initialSpeed = initialSpeed
+        self.currentSpeed = initialSpeed
+        self.slope = initialSlope
+        self.initUI()
+        self.slopeLabel.setText(f"Slope: {self.slope}%")
+        
     def initUI(self):
         layout = QVBoxLayout()
 
@@ -44,7 +42,7 @@ class CruiseControlUI(QWidget, defaultSpeed):
 
         self.speedDial = SpeedDial()
         self.speedDial.setMaximum(120)  # Max speed
-        self.setSpeed(self.currentSpeed)
+        self.set_speed(self.currentSpeed)
         self.speedDial.setDisabled(True)
 
         self.speedDial.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
@@ -70,7 +68,7 @@ class CruiseControlUI(QWidget, defaultSpeed):
 
         self.setLayout(layout)
 
-    def setSpeed(self, speed):
+    def set_speed(self, speed):
         self.speedDial.setSpeed(speed)
     
     def loadLottieAnimation(self, file_path):
@@ -95,19 +93,30 @@ class CruiseControlUI(QWidget, defaultSpeed):
         self.webView.setHtml(html_content)
 
     def increaseSlope(self):
-        self.slopeValue += 1
+        self.slope += 1
+        self.set_slope_in_simulation.emit(self.slope)
         self.updateSlopeAndSpeed()
 
     def decreaseSlope(self):
-        self.slopeValue -= 1
+        self.slope -= 1
+        self.set_slope_in_simulation.emit(self.slope)
         self.updateSlopeAndSpeed()
 
     def updateSlopeAndSpeed(self):
-        self.currentSpeed = self.defaultSpeed - 2 * self.slopeValue
-        self.setSpeed(self.currentSpeed)
-        self.slopeLabel.setText(f"Slope: {self.slopeValue}%")
-        self.adjustAnimationSpeed(self.currentSpeed / self.defaultSpeed)
-        rotation_angle = self.calculateRotationAngle(self.slopeValue)
+        G = 9.8
+
+        print("Updating slope and speed...")
+        # print(f"Egimin etkisi: ${math.sin(self.slope) * G}");
+        # self.currentSpeed -= math.sin(self.slope) * G
+        print(f"New speed: ${self.currentSpeed}")
+
+        # self.set_speed(self.currentSpeed)
+        self.slopeLabel.setText(f"Slope: {self.slope}%")
+
+        print(f"Setting animation speed to: ${self.currentSpeed / self.initialSpeed}")
+
+        self.adjustAnimationSpeed(self.currentSpeed / self.initialSpeed)
+        rotation_angle = self.calculateRotationAngle(self.slope)
         self.rotateAnimation(rotation_angle)
 
     def rotateAnimation(self, angle):
@@ -121,46 +130,3 @@ class CruiseControlUI(QWidget, defaultSpeed):
     def adjustAnimationSpeed(self, speedFactor):
         js_code = f"animation.setSpeed({speedFactor});"
         self.webView.page().runJavaScript(js_code)
-
-def run(cruiseControlUI):
-    simulation = get_simulation();
-
-    G = 9.8
-    initial_slope = 7
-    initial_speed = 100
-    target_speed = 90
-
-    for _ in range(20):
-        # x = True
-        
-        initial_speed -= math.sin(initial_slope)*G
-        #print("eğimdeki hızz:", initial_speed)
-        simulation.input['speed'] = initial_speed-target_speed
-
-        simulation.compute()
-        print("control signal:",simulation.output['control_signal'])
-        initial_speed += simulation.output['control_signal']
-        print("Input Speed:", initial_speed)
-        time.sleep(1)
-
-        speed_as_int = int(initial_speed)
-        cruiseControlUI.setSpeed(speed_as_int)
-
-        # Print the results
-        print("Input Speed:", initial_speed)
-        print("Control Signal:", simulation.output['control_signal'])    
-
-def main():
-    app = QApplication(sys.argv)
-    cruiseControlUI = CruiseControlUI(120)
-    cruiseControlUI.show()
-
-    time.sleep(3)
-
-    thread = threading.Thread(target=run, args=[cruiseControlUI])
-    thread.start()
-
-    sys.exit(app.exec_())
-
-if __name__ == '__main__':
-    main()

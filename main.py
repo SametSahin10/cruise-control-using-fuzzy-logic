@@ -1,26 +1,30 @@
-# Set the initial speed
-    x = True
-    G = 9.8
-    initial_slope = 7
-    initial_speed = 108.34301340128121
-    target_speed = 90;
-    while x:
-    initial_speed -= math.sin(initial_slope)*G
-    #print("eğimdeki hızz:", initial_speed)
-    speed_stabilization.input['speed'] = initial_speed-target_speed
+import sys
+from PyQt5.QtWidgets import QApplication
+from simulation import Simulation
+from simulation_ui import SimulationUI
 
-    speed_stabilization.compute()
-    print("control signal:",speed_stabilization.output['control_signal'])
-    initial_speed += speed_stabilization.output['control_signal']
-    print("Input Speed:", initial_speed)
-    time.sleep(1)
+def main():
+    app = QApplication(sys.argv)
 
-    # Compute the control signal
+    initialSpeed = 80
+    target_speed = 100
+    initialSlope = 3
 
-    speed.view()
-    control_signal.view()
+    simulationUI = SimulationUI(initialSpeed=60, initialSlope=initialSlope)
+    simulation = Simulation(
+        initial_speed=initialSpeed,
+        target_speed=target_speed,
+        initial_slope=initialSlope
+    )
 
-    # Print the results
-    print("Input Speed:", initial_speed)
-    print("Control Signal:", speed_stabilization.output['control_signal'])
-    control_signal.view(sim=speed_stabilization)
+    simulation.set_speed_in_ui.connect(simulationUI.set_speed)
+    simulationUI.set_slope_in_simulation.connect(simulation.set_slope)
+
+    simulationUI.show()
+    simulation.start()
+
+    sys.exit(app.exec_())
+
+if __name__ == "__main__":
+    main()
+
