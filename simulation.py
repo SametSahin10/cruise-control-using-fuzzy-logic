@@ -12,7 +12,7 @@ class Simulation(QThread):
 
     def __init__(self, initial_speed, target_speed, initial_slope):
         super().__init__()
-        self.initial_speed = initial_speed
+        self.current_speed = initial_speed
         self.target_speed = target_speed
         self.slope = initial_slope
 
@@ -63,21 +63,16 @@ class Simulation(QThread):
 
             slope_in_radians = math.radians(self.slope)
 
-            self.initial_speed -= math.sin(slope_in_radians) * G
+            self.current_speed -= math.sin(slope_in_radians) * G
             print(f"Egimden kaybedilen hiz: ${math.sin(slope_in_radians) * G}")
-            simulation.input['speed'] = self.initial_speed - self.target_speed
+            simulation.input['speed'] = self.current_speed - self.target_speed
 
-            print(f"Initial speed: ${self.initial_speed}")
+            print(f"Initial speed: ${self.current_speed}")
 
             simulation.compute()
-            # print("control signal:",simulation.output['control_signal'])
-            self.initial_speed += simulation.output['control_signal']
-            print("Output speed:", self.initial_speed)
+            self.current_speed += simulation.output['control_signal']
+            print("Output speed:", self.current_speed)
             time.sleep(1)
 
-            speed_as_int = int(self.initial_speed)
+            speed_as_int = int(self.current_speed)
             self.set_speed_in_ui.emit(speed_as_int)
-
-            # Print the results
-            # print("Input Speed:", initial_speed)
-            # print("Control Signal:", simulation.output['control_signal'])

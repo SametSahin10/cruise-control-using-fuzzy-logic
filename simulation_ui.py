@@ -41,12 +41,12 @@ class SimulationUI(QWidget):
         self.setWindowTitle("Cruise Control Simulation")
 
         self.speedDial = SpeedDial()
-        self.speedDial.setMaximum(120)  # Max speed
+        self.speedDial.setMaximum(120)
         self.set_speed(self.currentSpeed)
         self.speedDial.setDisabled(True)
 
         self.speedDial.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        self.speedDial.setMinimumSize(400, 400)  # Adjust size as needed
+        self.speedDial.setMinimumSize(400, 400)
 
         layout.addWidget(self.speedDial)
 
@@ -106,8 +106,6 @@ class SimulationUI(QWidget):
         G = 9.8
 
         print("Updating slope and speed...")
-        # print(f"Egimin etkisi: ${math.sin(self.slope) * G}");
-        # self.currentSpeed -= math.sin(self.slope) * G
         print(f"New speed: ${self.currentSpeed}")
 
         # self.set_speed(self.currentSpeed)
