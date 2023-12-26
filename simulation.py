@@ -70,6 +70,7 @@ class Simulation(QThread):
             print(f"Initial speed: ${self.current_speed}")
 
             simulation.compute()
+            # print("control signal:",simulation.output['control_signal'])
             self.current_speed += simulation.output['control_signal']
             print("Output speed:", self.current_speed)
             time.sleep(1)
